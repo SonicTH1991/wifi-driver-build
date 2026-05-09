@@ -22,7 +22,7 @@ jobs:
       - name: Download Kernel Source
         run: |
           # ЗАМЕНИ ССЫЛКУ НИЖЕ на репозиторий твоего ядра (Akame/Nova)
-          git clone --depth=1 https://github.com/название_автора/репозиторий_ядра kernel-source
+          git clone --depth=1 https://github.com/maazm7d/kernel_samsung_a12 kernel-source
           
       - name: Setup Toolchain (Clang)
         run: |
@@ -33,7 +33,7 @@ jobs:
         run: |
           cd kernel-source
           # Замени 'your_defconfig' на имя конфига твоего устройства (например, akame_defconfig)
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang O=out your_defconfig
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang O=out exynos850-a12snsxx_defconfig
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang O=out modules_prepare
 
       - name: Compile Module
