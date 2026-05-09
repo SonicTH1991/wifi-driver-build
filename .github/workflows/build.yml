@@ -1,37 +1,52 @@
-name: Build WiFi Driver RTL88x2BU
+name: Build WiFi Driver for Android (ARM64)
 
 on:
-  workflow_dispatch: # Кнопка для ручного запуска
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Source
+      - name: Checkout Driver Source
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          path: driver # Кладим драйвер в отдельную папку
 
-      - name: Install Build Essentials
+      - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libelf-dev bc flex bison libssl-dev
+          sudo apt-get install -y build-essential bc flex bison libssl-dev libelf-dev clang lld llvm
 
-      - name: Download Kernel Headers
+      - name: Download Kernel Source
         run: |
-          # По умолчанию берем ядро сервера. 
-          # Для конкретной версии замени $(uname -r) на нужную, например 5.10.0-21-generic
-          sudo apt-get install -y linux-headers-$(uname -r)
-          echo "KDIR=/lib/modules/$(uname -r)/build" >> $GITHUB_ENV
+          # ЗАМЕНИ ССЫЛКУ НИЖЕ на репозиторий твоего ядра (Akame/Nova)
+          git clone --depth=1 https://github.com/название_автора/репозиторий_ядра kernel-source
+          
+      - name: Setup Toolchain (Clang)
+        run: |
+          # Скачиваем официальный Android Clang (пребуилт)
+          git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 clang-toolchain
+
+      - name: Prepare Kernel
+        run: |
+          cd kernel-source
+          # Замени 'your_defconfig' на имя конфига твоего устройства (например, akame_defconfig)
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang O=out your_defconfig
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang O=out modules_prepare
 
       - name: Compile Module
         run: |
-          # Переходим в папку подмодуля и запускаем сборку
-          cd rtl88x2bu
-          make -C ${{ env.KDIR }} M=$PWD modules
+          export PATH=$GITHUB_WORKSPACE/clang-toolchain/clang-stable/bin:$PATH
+          cd driver/rtl88x2bu
+          # Собираем драйвер, указывая путь к подготовленному ядру
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
+          KSRC=$GITHUB_WORKSPACE/kernel-source/out \
+          modules
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: 88x2bu-module
-          path: rtl88x2bu/*.ko
+          name: 88x2bu-android-arm64
+          path: "**/*.ko"
