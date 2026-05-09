@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          path: driver # Кладим драйвер в отдельную папку
+          path: driver
 
       - name: Install Dependencies
         run: |
@@ -21,26 +21,22 @@ jobs:
 
       - name: Download Kernel Source
         run: |
-          # ЗАМЕНИ ССЫЛКУ НИЖЕ на репозиторий твоего ядра (Akame/Nova)
           git clone --depth=1 https://github.com/maazm7d/kernel_samsung_a12 kernel-source
-          
+
       - name: Setup Toolchain (Clang)
         run: |
-          # Скачиваем официальный Android Clang (пребуилт)
           git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 clang-toolchain
 
       - name: Prepare Kernel
         run: |
           cd kernel-source
-          # Замени 'your_defconfig' на имя конфига твоего устройства (например, akame_defconfig)
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang O=out exynos850-a12snsxx_defconfig
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang O=out exynos850-a12naxx_defconfig
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang O=out modules_prepare
 
       - name: Compile Module
         run: |
           export PATH=$GITHUB_WORKSPACE/clang-toolchain/clang-stable/bin:$PATH
-          cd driver/rtl88x2bu
-          # Собираем драйвер, указывая путь к подготовленному ядру
+          cd rtl88x2bu
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang \
           KSRC=$GITHUB_WORKSPACE/kernel-source/out \
           modules
